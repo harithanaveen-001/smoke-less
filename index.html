@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smoking Exposure & Health Impact Calculator</title>
+<style>
+*{box-sizing:border-box}
+:root{
+  --navy:#17345d;--blue:#1677e8;--muted:#62728a;--line:#dce4ee;
+  --green:#55b83d;--lime:#acd52d;--yellow:#f6bd13;--orange:#f4771d;--red:#e62b2b;
+  --softred:#fff1ef;--softblue:#f2f8ff
+}
+body{margin:0;background:#f3f7fb;font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--navy);padding:28px 16px}
+.app{max-width:1160px;margin:auto}
+.header{background:linear-gradient(115deg,#fff,#eef6ff);border-radius:22px;padding:27px 32px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 8px 28px rgba(29,52,82,.07)}
+.brand{display:flex;align-items:center;gap:15px}.lung{font-size:42px}
+h1{margin:0;font-size:31px;letter-spacing:-.8px}.header p{margin:6px 0 0;color:var(--muted);font-size:14px}
+.slogan{text-align:right;color:#2380dd;font-weight:700;font-style:italic;font-size:21px}
+.grid{display:grid;grid-template-columns:370px 1fr;gap:18px}
+.card{background:#fff;border-radius:20px;padding:28px;box-shadow:0 8px 28px rgba(29,52,82,.07);border:1px solid rgba(220,228,238,.65)}
+h2{margin:0 0 7px;font-size:23px}.sub{color:var(--muted);font-size:13px;line-height:1.5;margin:0 0 23px}
+.field{margin-bottom:18px}label{display:block;font-size:13px;font-weight:800;margin-bottom:8px}
+input,select{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:10px;font:inherit;color:#1d2d45;background:#fff;outline:none}
+input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(22,119,232,.1)}
+.hint{font-size:11px;color:#8491a3;margin-top:6px}
+button{width:100%;border:0;border-radius:11px;padding:14px;font:inherit;font-weight:800;cursor:pointer}
+.calculate{background:var(--blue);color:#fff;margin-top:5px}.calculate:hover{background:#0869d5}
+.reset{background:#eef2f6;color:#536276;margin-top:10px}
+.error{display:none;color:#b42318;font-size:12px;margin-top:10px}
+.result-card{min-height:900px}.result-top{display:flex;justify-content:space-between;align-items:flex-start;gap:15px}
+.status{font-size:13px;color:var(--muted);margin-top:5px}
+.badge{padding:7px 12px;border-radius:999px;font-size:11px;font-weight:800;background:#eef3f8;color:#5a6980}
+
+/* Main exposure gauge */
+.gauge-wrap{position:relative;width:min(650px,100%);height:300px;margin:4px auto 0}
+.gauge{position:absolute;left:50%;top:20px;transform:translateX(-50%);width:500px;height:250px;border-radius:500px 500px 0 0;
+background:conic-gradient(from 270deg,var(--green) 0deg 35deg,#fff 35deg 37deg,var(--lime) 37deg 71deg,#fff 71deg 73deg,var(--yellow) 73deg 107deg,#fff 107deg 109deg,var(--orange) 109deg 143deg,#fff 143deg 145deg,var(--red) 145deg 180deg)}
+.gauge:after{content:"";position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:290px;height:145px;border-radius:290px 290px 0 0;background:#fff}
+.needle{position:absolute;z-index:5;left:50%;bottom:63px;width:8px;height:177px;transform-origin:50% 100%;transform:translateX(-50%) rotate(-72deg);transition:transform 1.15s cubic-bezier(.18,.89,.25,1.18)}
+.needle:before{content:"";position:absolute;left:50%;top:0;transform:translateX(-50%);width:7px;height:154px;border-radius:7px;background:#29323d}
+.needle:after{content:"";position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);width:29px;height:29px;border-radius:50%;background:#303944;border:6px solid #717b86}
+.labels{position:absolute;z-index:7;inset:0;pointer-events:none;font-size:12px;font-weight:850}
+.labels span{position:absolute;transform:translate(-50%,-50%);white-space:nowrap}
+.l0{left:7%;top:76%;color:#3e982e}.l1{left:25%;top:38%;color:#719f22}.l2{left:50%;top:23%;color:#a97d00}.l3{left:75%;top:38%;color:#d86214}.l4{left:93%;top:76%;color:#c72525}
+.center{position:absolute;z-index:8;left:50%;top:204px;transform:translateX(-50%);text-align:center}.center small{display:block;color:#748196;font-weight:700;font-size:12px}.center strong{font-size:20px}
+
+/* Direction warning */
+.direction{display:none;margin-top:0;border:1px solid #f2b8b2;background:var(--softred);border-radius:15px;padding:15px 18px;align-items:center;gap:14px;box-shadow:0 5px 16px rgba(199,48,38,.07)}
+.direction.show{display:flex}.warn-icon{font-size:28px}.direction .eyebrow{font-size:11px;color:#a92a23;font-weight:900;text-transform:uppercase;letter-spacing:.07em}.direction .main{font-size:19px;font-weight:900;color:#c32620;margin-top:2px}.direction .support{font-size:12px;color:#687589;margin-top:3px;line-height:1.4}
+.result-box{border-radius:15px;padding:19px 22px;text-align:center;margin-top:13px;background:#fffaf0;border:1px solid #f2e5c8}
+.result-box .small{font-size:13px;font-weight:800}.result-box h3{font-size:34px;margin:3px 0 5px;letter-spacing:-1px}.result-box p{margin:0;color:#5f6d80;font-size:13px;line-height:1.5}
+.recommend{margin-top:13px;padding:15px 18px;border-radius:14px;background:var(--softblue);border:1px solid #dcecff;display:flex;gap:12px;align-items:flex-start}
+.target{font-size:23px}.recommend strong{font-size:14px;color:#1c66b1}.recommend p{margin:4px 0 0;color:#657286;font-size:12px;line-height:1.5}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:13px}.tile{padding:14px 10px;border-radius:13px;text-align:center;background:#f5faf3}.tile:nth-child(2){background:#f7f9fd}.tile:nth-child(3){background:#fff8eb}.tile .ico{font-size:21px}.tile strong{display:block;margin-top:4px;font-size:13px}.tile span{font-size:11px;color:#718096}
+.hidden{display:none}
+
+/* Second heat scale */
+.impact-card{margin-top:16px;padding:20px 20px 18px;border-radius:17px;background:#fbfdff;border:1px solid #e0e8f2}
+.impact-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}.impact-head h3{margin:0;font-size:18px}.impact-head p{margin:5px 0 0;color:#6b788c;font-size:12px;line-height:1.45}
+.baseline{font-size:11px;font-weight:800;padding:7px 10px;border-radius:999px;background:#eef5fb;color:#56708d;white-space:nowrap}
+.heat{position:relative;margin:18px 4px 7px;height:26px;border-radius:999px;background:linear-gradient(90deg,#55b83d 0%,#acd52d 25%,#f6bd13 50%,#f4771d 75%,#e62b2b 100%);box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
+.marker{position:absolute;top:50%;left:0%;transform:translate(-50%,-50%);width:24px;height:24px;border-radius:50%;background:#fff;border:4px solid #17345d;box-shadow:0 2px 8px rgba(23,52,93,.25);transition:left 1s cubic-bezier(.18,.89,.25,1.18)}
+.heat-labels{display:flex;justify-content:space-between;font-size:10px;font-weight:800;color:#687589}.heat-labels span{text-align:center}
+.impact-result{margin-top:13px;padding:13px 15px;border-radius:12px;background:#fff;border:1px solid #e3eaf2;display:flex;align-items:center;gap:11px}
+.impact-dot{width:13px;height:13px;border-radius:50%;background:#55b83d;flex:0 0 auto}.impact-result strong{font-size:14px}.impact-result span{font-size:11px;color:#6d798a;display:block;margin-top:2px}
+.impact-note{margin-top:10px;font-size:10.5px;color:#718096;line-height:1.5}
+.references{margin-top:18px;padding:17px 18px;border-radius:15px;background:#f7f9fc;border:1px solid #e1e7ef}
+.references h3{margin:0 0 8px;font-size:14px}.references p{margin:5px 0;font-size:10.5px;line-height:1.5;color:#66758a}
+.references a{color:#176fcb;text-decoration:none}.references a:hover{text-decoration:underline}
+.note{margin-top:16px;background:#eaf4ff;border-radius:15px;padding:14px 17px;color:#5e718b;font-size:10.5px;line-height:1.5}.note strong{color:var(--navy)}
+
+@media(max-width:850px){.grid{grid-template-columns:1fr}.slogan{display:none}}
+@media(max-width:560px){
+body{padding:0}.header,.card{border-radius:0}.header{padding:22px}.card{padding:22px}
+.gauge-wrap{height:265px}.gauge{width:350px;height:175px}.gauge:after{width:200px;height:100px}
+.needle{height:126px;bottom:45px}.needle:before{height:112px}.center{top:157px}
+.l0{left:4%}.l4{left:96%}.l1{top:34%}.l3{top:34%}.l2{top:20%}.tiles{grid-template-columns:1fr}
+.impact-head{display:block}.baseline{display:inline-block;margin-top:10px}
+}
+</style>
+
+<meta name="theme-color" content="#1677e8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Smoke Less">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+
+<style>
+/* PWA mobile-first enhancements */
+@media(max-width:850px){
+  body{padding:0;background:#f3f7fb}
+  .app{width:100%}
+  .header{border-radius:0 0 22px 22px;padding:22px 20px;display:block}
+  .brand{gap:11px}
+  .lung{font-size:34px}
+  h1{font-size:25px;line-height:1.12}
+  .header p{font-size:12px;line-height:1.45}
+  .slogan{display:none}
+  .grid{display:block}
+  .card{border-radius:0;margin:0;padding:22px 18px;box-shadow:none;border:0}
+  .result-card{min-height:0}
+  .field{margin-bottom:16px}
+  input,select{font-size:16px;padding:14px}
+  button{min-height:50px}
+  .gauge-wrap{height:255px;overflow:hidden}
+  .gauge{width:390px;height:195px}
+  .gauge:after{width:230px;height:115px}
+  .needle{height:138px;bottom:47px}
+  .needle:before{height:122px}
+  .center{top:166px}
+  .impact-card{margin-top:18px;padding:18px 15px}
+  .references{padding:15px}
+}
+@media(max-width:430px){
+  .header{padding:19px 16px}
+  .card{padding:20px 15px}
+  h2{font-size:21px}
+  .gauge-wrap{height:235px}
+  .gauge{width:340px;height:170px}
+  .gauge:after{width:200px;height:100px}
+  .needle{height:122px;bottom:43px}
+  .needle:before{height:108px}
+  .center{top:145px}
+  .labels{font-size:10px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="header">
+  <div class="brand"><div class="lung">🫁</div><div>
+    <h1>Smoking Exposure & Health Impact Calculator</h1>
+    <p>Understand your exposure. See how smoking-related impact compares with a never-smoker baseline.</p>
+  </div></div>
+  <div class="slogan">Less Smoke<br>More Life</div>
+</header>
+
+<div class="grid">
+<section class="card">
+  <h2>Your Details</h2>
+  <p class="sub">Enter your current smoking information to see your estimated exposure level and an educational health-impact comparison.</p>
+
+  <div class="field"><label for="age">Age</label>
+    <input id="age" type="number" min="12" max="100" placeholder="e.g. 28"></div>
+
+  <div class="field"><label for="sex">Sex</label>
+    <select id="sex"><option value="">Select</option><option>Male</option><option>Female</option><option>Other / Prefer not to say</option></select>
+  </div>
+
+  <div class="field"><label for="cigs">Cigarettes per day</label>
+    <input id="cigs" type="number" min="0" max="200" step="1" placeholder="e.g. 10">
+    <div class="hint">Use your usual daily average.</div>
+  </div>
+
+  <div class="field"><label for="years">Years of smoking</label>
+    <input id="years" type="number" min="0" max="90" step="0.5" placeholder="e.g. 3"></div>
+
+  <button class="calculate" onclick="calculateRisk()">Check My Risk</button>
+  <button class="reset" onclick="resetForm()">Reset</button>
+  <div id="error" class="error"></div>
+</section>
+
+<section class="card result-card">
+  <div class="result-top">
+    <div><h2>Your Smoking Exposure</h2><div class="status">A research-informed educational classification, not a disease probability.</div></div>
+    <div id="badge" class="badge">Not calculated</div>
+  </div>
+
+  <div class="gauge-wrap">
+    <div class="gauge"></div>
+    <div class="labels">
+      <span class="l0">Very Low</span><span class="l1">Low</span><span class="l2">Moderate</span>
+      <span class="l3">High</span><span class="l4">Very High</span>
+    </div>
+    <div id="needle" class="needle"></div>
+    <div class="center"><small>Current Level</small><strong id="scoreText">—</strong></div>
+  </div>
+
+  <div id="direction" class="direction">
+    <div class="warn-icon">⚠️</div>
+    <div>
+      <div class="eyebrow">Risk direction</div>
+      <div class="main" id="directionMain">You are going to High risk category</div>
+      <div class="support" id="directionSupport">Continued smoking can increase cumulative exposure.</div>
+    </div>
+  </div>
+
+  <div id="resultBox" class="result-box hidden">
+    <div class="small">Your Current Exposure Level</div>
+    <h3 id="riskText">—</h3>
+    <p id="riskMessage">—</p>
+  </div>
+
+  <div id="recommend" class="recommend hidden">
+    <div class="target">🎯</div><div>
+      <strong id="targetTitle">Next goal: move toward a lower category</strong>
+      <p id="targetText">Reducing or stopping smoking is the strongest way to reduce future smoking-related harm.</p>
+    </div>
+  </div>
+
+  <div class="tiles">
+    <div class="tile"><div class="ico">🌿</div><strong>Reduce</strong><span>Lower your exposure</span></div>
+    <div class="tile"><div class="ico">❤️</div><strong>Improve</strong><span>Protect heart & lungs</span></div>
+    <div class="tile"><div class="ico">🏃</div><strong>Achieve</strong><span>Work toward quitting</span></div>
+  </div>
+
+  <!-- New comparison / heat-scale section -->
+  <div class="impact-card">
+    <div class="impact-head">
+      <div>
+        <h3>Smoking-Related Health Impact vs Never-Smoker Baseline</h3>
+        <p>This is a qualitative heat scale showing how smoking exposure moves away from a never-smoker reference point.</p>
+      </div>
+      <div class="baseline">Reference: Never smoker</div>
+    </div>
+
+    <div class="heat" aria-label="Health impact heat scale">
+      <div id="marker" class="marker"></div>
+    </div>
+    <div class="heat-labels">
+      <span>Near<br>baseline</span>
+      <span>Elevated</span>
+      <span>Meaningfully<br>elevated</span>
+      <span>High<br>impact</span>
+      <span>Very high<br>impact</span>
+    </div>
+
+    <div id="impactResult" class="impact-result">
+      <div id="impactDot" class="impact-dot"></div>
+      <div><strong id="impactTitle">Not calculated</strong><span id="impactText">Enter your smoking information to see the comparison.</span></div>
+    </div>
+
+    <div class="impact-note">
+      <strong>Why this is not a “health percentage”:</strong> smoking affects different diseases differently. There is no scientifically valid way to say that a person is “70% as healthy as a non-smoker” from age, sex, cigarettes/day and years alone. This heat scale is therefore qualitative and educational rather than a clinical health score.
+    </div>
+  </div>
+
+  <div class="references">
+    <h3>Research resources used for the educational interpretation</h3>
+    <p>• <a href="https://www.who.int/news-room/questions-and-answers/item/tobacco-health-benefits-of-smoking-cessation" target="_blank">WHO — Health benefits of smoking cessation</a>: describes improvements after quitting, from circulation and lung function to longer-term cardiovascular and cancer risk reduction.</p>
+    <p>• <a href="https://www.bmj.com/content/360/bmj.j5855" target="_blank">BMJ — Low cigarette consumption and cardiovascular risk</a>: found that even about 1 cigarette/day is associated with substantial cardiovascular risk; there is no safe level for cardiovascular disease.</p>
+    <p>• <a href="https://pubmed.ncbi.nlm.nih.gov/30800285/" target="_blank">Systematic review — smoking and lung cancer, COPD, IHD and stroke</a>: reports higher risks among current smokers and evidence of dose-response for several outcomes.</p>
+    <p>• <a href="https://www.who.int/europe/news-room/fact-sheets/item/effects-of-tobacco-on-health" target="_blank">WHO Europe — Effects of tobacco on health</a>: summarizes the broad health effects of tobacco and benefits of cessation.</p>
+  </div>
+
+  <div class="note"><strong>Important:</strong> This calculator provides a general smoking-exposure classification and a qualitative health-impact visualization using current cigarettes/day, duration and age. It is <strong>not</strong> a medical diagnosis, a validated individual disease-risk calculator, or a percentage comparison with a healthy person. Sex is collected for demographic context and is not assigned arbitrary numerical points.</div>
+</section>
+</div>
+</div>
+
+<script>
+function calculateRisk(){
+ const age=Number(document.getElementById('age').value);
+ const sex=document.getElementById('sex').value;
+ const cigs=Number(document.getElementById('cigs').value);
+ const years=Number(document.getElementById('years').value);
+ const error=document.getElementById('error');
+ error.style.display='none';
+
+ if(!age||age<12||age>100)return err('Please enter a valid age.');
+ if(!sex)return err('Please select sex.');
+ if(!Number.isFinite(cigs)||cigs<0||cigs>200)return err('Please enter a valid cigarettes-per-day value.');
+ if(!Number.isFinite(years)||years<0||years>90)return err('Please enter valid years of smoking.');
+ if(years>age-10)return err('Years of smoking cannot exceed the allowed age range.');
+
+ // Existing research-informed prototype exposure classification.
+ const packYears=(cigs*years)/20;
+ let score=0;
+ if(cigs===0)score=0;
+ else if(cigs<=4)score=1;
+ else if(cigs<=9)score=2;
+ else if(cigs<=19)score=3;
+ else score=4;
+
+ if(packYears>=1)score+=1;
+ if(packYears>5)score+=1;
+ if(packYears>10)score+=1;
+ if(packYears>20)score+=1;
+
+ if(cigs>0&&age>=50)score+=1;
+ else if(cigs>0&&age>=35)score+=0.5;
+
+ let level,index,message;
+ if(cigs===0){level='Very Low';index=0;message='No current cigarette use was entered, placing current smoking exposure at the lowest end of this scale.';}
+ else if(score<=2){level='Low';index=1;message='Your current smoking pattern falls within the lower exposure range, but it is not risk-free.';}
+ else if(score<=4){level='Moderate';index=2;message='Your current smoking pattern represents a meaningful level of smoking exposure.';}
+ else if(score<=8){level='High';index=3;message='Your current smoking pattern represents a substantial level of smoking exposure.';}
+ else{level='Very High';index=4;message='Your current smoking pattern represents a very substantial level of smoking exposure.';}
+
+ const angles=[-72,-36,0,36,72];
+ document.getElementById('needle').style.transform='translateX(-50%) rotate('+angles[index]+'deg)';
+ document.getElementById('scoreText').textContent=level;
+ document.getElementById('riskText').textContent=level;
+ document.getElementById('riskMessage').textContent=message;
+ document.getElementById('badge').textContent='Level '+(index+1)+' of 5';
+ document.getElementById('resultBox').classList.remove('hidden');
+ document.getElementById('recommend').classList.remove('hidden');
+
+ const direction=document.getElementById('direction');
+ const directionMain=document.getElementById('directionMain');
+ const directionSupport=document.getElementById('directionSupport');
+ const targetTitle=document.getElementById('targetTitle');
+
+ if(index>0 && index<4){
+   direction.classList.add('show');
+   const next=['Low','Moderate','High','Very High'][index];
+   directionMain.textContent='You are going to '+next+' risk category';
+   directionSupport.textContent='Continued smoking can move your cumulative exposure toward the '+next+' category.';
+   targetTitle.textContent='Next goal: move toward '+(['Very Low','Low','Moderate','High'][index]);
+ }else if(index===4){
+   direction.classList.add('show');
+   directionMain.textContent='You are already in the Very High risk category';
+   directionSupport.textContent='Reducing or stopping smoking is the strongest step toward lowering future health risk.';
+   targetTitle.textContent='Next goal: move toward High';
+ }else if(index===1){
+   direction.classList.add('show');
+   directionMain.textContent='You are moving toward Moderate risk';
+   directionSupport.textContent='Continued smoking can increase cumulative exposure over time.';
+   targetTitle.textContent='Next goal: move toward Very Low';
+ }else{
+   direction.classList.remove('show');
+   targetTitle.textContent='Next goal: maintain the lowest possible exposure';
+ }
+
+ updateImpact(cigs,packYears,age);
+}
+
+function updateImpact(cigs,packYears,age){
+ // Qualitative educational heat band.
+ // It intentionally does NOT represent a validated disease probability or "health percentage".
+ let band=0;
+ if(cigs===0) band=0;
+ else if(cigs<=4 && packYears<1) band=1;
+ else if((cigs<=9 && packYears<=5) || packYears<1) band=2;
+ else if(cigs<=19 && packYears<=10) band=3;
+ else band=4;
+
+ // Current age is used only as an additional exposure-context modifier,
+ // never as a disease-risk probability.
+ if(cigs>0 && age>=50 && band<4) band+=1;
+
+ const titles=['Near baseline','Elevated impact','Meaningfully elevated impact','High impact','Very high impact'];
+ const texts=[
+   'No current cigarette use was entered. The reference point is a never-smoker baseline.',
+   'Your smoking exposure is above the never-smoker reference. Even low daily consumption is not risk-free.',
+   'Your current pattern represents a more noticeable smoking-related health impact than the reference baseline.',
+   'Your current pattern represents a high smoking-related health impact, with substantial cumulative exposure.',
+   'Your current pattern represents a very high smoking-related health impact and substantial cumulative exposure.'
+ ];
+ const positions=[0,25,50,75,100];
+ document.getElementById('marker').style.left=positions[band]+'%';
+ document.getElementById('impactTitle').textContent=titles[band];
+ document.getElementById('impactText').textContent=texts[band];
+ document.getElementById('impactDot').style.background=['#55b83d','#acd52d','#f6bd13','#f4771d','#e62b2b'][band];
+}
+
+function err(msg){const e=document.getElementById('error');e.textContent=msg;e.style.display='block';}
+
+function resetForm(){
+ ['age','cigs','years'].forEach(id=>document.getElementById(id).value='');
+ document.getElementById('sex').value='';
+ document.getElementById('error').style.display='none';
+ document.getElementById('resultBox').classList.add('hidden');
+ document.getElementById('recommend').classList.add('hidden');
+ document.getElementById('direction').classList.remove('show');
+ document.getElementById('badge').textContent='Not calculated';
+ document.getElementById('scoreText').textContent='—';
+ document.getElementById('needle').style.transform='translateX(-50%) rotate(-72deg)';
+ document.getElementById('marker').style.left='0%';
+ document.getElementById('impactTitle').textContent='Not calculated';
+ document.getElementById('impactText').textContent='Enter your smoking information to see the comparison.';
+ document.getElementById('impactDot').style.background='#55b83d';
+}
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
